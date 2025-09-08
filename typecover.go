@@ -21,23 +21,36 @@ var Analyzer = &analysis.Analyzer{
 	Requires: []*analysis.Analyzer{inspect.Analyzer},
 }
 
-var commentRegex = regexp.MustCompile(`typecover:([\w.]+)`)
+var commentRegex = regexp.MustCompile(`typecover:\s*([\w.]+)`)
 
-func run(pass *analysis.Pass) (interface{}, error) {
+func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
 		commentMap := ast.NewCommentMap(pass.Fset, file, file.Comments)
 		ast.Inspect(file, func(n ast.Node) bool {
 			for _, comments := range commentMap[n] {
 				for _, comment := range comments.List {
-					var exclude []string
+					var (
+						exclude        []string
+						excludeMethods bool
+					)
+
 					matches := commentRegex.FindAllStringSubmatch(comment.Text, 1)
 					if len(matches) == 1 && len(matches[0]) == 2 {
-						// Check if there are any member to exclude
-						ss := strings.Split(comment.Text, "-exclude")
+						commentText := comment.Text
+
+						// Detect -excludeMethods flag (no arguments)
+						if strings.Contains(commentText, "-excludeMethods") {
+							excludeMethods = true
+							// Remove the flag so it does not interfere with -exclude parsing
+							commentText = strings.ReplaceAll(commentText, "-excludeMethods", "")
+						}
+
+						// Look for -exclude <list>
+						ss := strings.Split(commentText, "-exclude")
 						if len(ss) > 1 {
 							exclude = strings.Split(strings.TrimLeft(ss[1], "= "), ",")
 						}
-						if len(ss) > 2 {
+						if len(ss) > 2 { // More than one -exclude encountered
 							reportNodef(pass, n, "Detected more than one '~'. Separate arguments with commas")
 						}
 
@@ -47,7 +60,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 							reportNodef(pass, n, "Type %s not found in project scope", typeName)
 							return false
 						}
-						missing := checkMembers(pass, n, t, exclude)
+						missing := checkMembers(pass, n, t, exclude, excludeMethods)
 						if len(missing) > 0 {
 							reportNodef(pass, n, "Type %s is missing %s", typeName, strings.Join(missing, ", "))
 						}
@@ -60,16 +73,22 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	return nil, nil
 }
 
-func checkMembers(pass *analysis.Pass, n ast.Node, target types.Type, exclude []string) []string {
+// checkMembers determines which exported members (fields / methods) of the target type
+// are present in the covered AST node. It returns a slice of missing members.
+// If excludeMethods is true, exported methods are ignored (treated as satisfied).
+func checkMembers(pass *analysis.Pass, n ast.Node, target types.Type, exclude []string, excludeMethods bool) []string {
 	membersFound := map[string]bool{}
 
-	for _, t := range []types.Type{target, types.NewPointer(target)} {
-		mset := types.NewMethodSet(t)
-		for i := 0; i < mset.Len(); i++ {
-			switch u := mset.At(i).Obj().(type) {
-			case *types.Func:
-				if u.Exported() {
-					membersFound[u.Name()] = false
+	// Unless -excludeMethods is provided, gather method set for both the type and *type.
+	if !excludeMethods {
+		for _, t := range []types.Type{target, types.NewPointer(target)} {
+			mset := types.NewMethodSet(t)
+			for i := 0; i < mset.Len(); i++ {
+				switch u := mset.At(i).Obj().(type) {
+				case *types.Func:
+					if u.Exported() {
+						membersFound[u.Name()] = false
+					}
 				}
 			}
 		}
@@ -77,9 +96,11 @@ func checkMembers(pass *analysis.Pass, n ast.Node, target types.Type, exclude []
 
 	switch u := target.Underlying().(type) {
 	case *types.Interface:
-		for i := 0; i < u.NumMethods(); i++ {
-			if u.Method(i).Exported() {
-				membersFound[u.Method(i).Name()] = false
+		if !excludeMethods { // Only track interface methods when not excluded
+			for i := 0; i < u.NumMethods(); i++ {
+				if u.Method(i).Exported() {
+					membersFound[u.Method(i).Name()] = false
+				}
 			}
 		}
 
@@ -147,8 +168,12 @@ func checkMembers(pass *analysis.Pass, n ast.Node, target types.Type, exclude []
 
 	// Mark all excluded members as found.
 	for _, e := range exclude {
-		if _, ok := membersFound[strings.TrimSpace(e)]; ok {
-			membersFound[e] = true
+		trimmed := strings.TrimSpace(e)
+		if trimmed == "" {
+			continue
+		}
+		if _, ok := membersFound[trimmed]; ok {
+			membersFound[trimmed] = true
 		}
 	}
 
