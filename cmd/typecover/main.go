@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kisunji/typecover"
+	"github.com/reillywatson/typecover"
 	"golang.org/x/tools/go/analysis/singlechecker"
 )
 

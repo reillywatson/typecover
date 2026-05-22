@@ -3,7 +3,7 @@ package typecover_test
 import (
 	"testing"
 
-	"github.com/kisunji/typecover"
+	"github.com/reillywatson/typecover"
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 

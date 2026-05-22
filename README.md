@@ -8,7 +8,7 @@ It is useful in cases where code wants to be aware of any newly added members.
 ## Install
 
 ```
-go get -u github.com/kisunji/typecover/cmd/typecover
+go get -u github.com/reillywatson/typecover/cmd/typecover
 ```
 
 ## Usage
