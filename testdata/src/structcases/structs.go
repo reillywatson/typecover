@@ -1,4 +1,4 @@
-package structs
+package structcases
 
 import "flag"
 
@@ -52,7 +52,7 @@ func testBlockPass() {
 }
 
 // typecover:MyStruct
-func testBlockFail() { // want `Type structs.MyStruct is missing MyField1`
+func testBlockFail() { // want `Type structcases.MyStruct is missing MyField1`
 	m := MyStruct{}
 	if true {
 		m.MyField2 = "world"
@@ -68,7 +68,7 @@ func testBlockPointerPass() {
 }
 
 // typecover:MyStruct
-func testBlockPointerFail() { // want `Type structs.MyStruct is missing MyField2`
+func testBlockPointerFail() { // want `Type structcases.MyStruct is missing MyField2`
 	m := &MyStruct{}
 	m.MyField1 = "hello"
 	return
@@ -83,7 +83,7 @@ func testBlockAndCompositeLiteral() {
 }
 
 // typecover:MyStruct
-func testBlockTwoStructsSameFieldNames() { // want `Type structs.MyStruct is missing MyField1`
+func testBlockTwoStructsSameFieldNames() { // want `Type structcases.MyStruct is missing MyField1`
 	m := MyStruct{}
 	if true {
 		m.MyField2 = "world"
@@ -108,7 +108,7 @@ func testAssigningFromAllFields() {
 	}
 
 	// typecover:MyStruct
-	_ = local{ // want `Type structs.MyStruct is missing MyField2`
+	_ = local{ // want `Type structcases.MyStruct is missing MyField2`
 		MyField1: m.MyField1,
 		MyField2: "world",
 	}
@@ -124,7 +124,7 @@ func testAssigningFromAllFields() {
 	}
 
 	// typecover:MyStruct
-	_ = localWPointers{ // want `Type structs.MyStruct is missing MyField2`
+	_ = localWPointers{ // want `Type structcases.MyStruct is missing MyField2`
 		MyField1: &m.MyField1,
 		MyField2: nil,
 	}
@@ -138,14 +138,14 @@ func testStructs() {
 	}
 
 	// typecover:MyStruct
-	_ = MyStruct{ // want `Type structs.MyStruct is missing MyField2`
+	_ = MyStruct{ // want `Type structcases.MyStruct is missing MyField2`
 		MyField1: "hello",
 	}
 
 	// TEST: nonvalid struct
 
 	// typecover:MyStruct2
-	_ = MyStruct{ // want `Type structs.MyStruct2 not found in project scope`
+	_ = MyStruct{ // want `Type structcases.MyStruct2 not found in project scope`
 		MyField1: "hello",
 		MyField2: "world",
 	}
@@ -181,7 +181,7 @@ func testStructs() {
 	// typecover:MyEmbeddedStruct
 	_ = MyEmbeddedStruct{
 		// typecover:MyStruct
-		MyStruct: MyStruct{ // want `Type structs.MyStruct is missing MyField2`
+		MyStruct: MyStruct{ // want `Type structcases.MyStruct is missing MyField2`
 			MyField1: "",
 		},
 		MyField4: "hello",
@@ -194,7 +194,7 @@ func testStructs() {
 	}
 
 	// typecover:MyStruct
-	_ = &MyStruct{ // want `Type structs.MyStruct is missing MyField1`
+	_ = &MyStruct{ // want `Type structcases.MyStruct is missing MyField1`
 		MyField2: "world",
 	}
 
@@ -209,7 +209,7 @@ func testStructs() {
 	}
 
 	// typecover:MyStructWithMethods
-	_ = &MyStructWithMethods{ // want `Type structs.MyStructWithMethods is missing ValueMethod, PointerMethod`
+	_ = &MyStructWithMethods{ // want `Type structcases.MyStructWithMethods is missing ValueMethod, PointerMethod`
 		MyField: "",
 	}
 
@@ -227,7 +227,7 @@ func testStructs() {
 	}
 
 	//typecover:MyEmbeddedStructWithMethods
-	{ // want `Type structs.MyEmbeddedStructWithMethods is missing PointerMethod`
+	{ // want `Type structcases.MyEmbeddedStructWithMethods is missing PointerMethod`
 		m := &MyEmbeddedStructWithMethods{
 			MyStructWithMethods: MyStructWithMethods{
 				MyField: "",

@@ -1,4 +1,4 @@
-package structs
+package structcases
 
 import (
 	"myvendor.org/somepkg"

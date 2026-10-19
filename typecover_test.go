@@ -8,7 +8,7 @@ import (
 )
 
 func TestStructs(t *testing.T) {
-	analysistest.Run(t, analysistest.TestData(), typecover.Analyzer, "structs")
+	analysistest.Run(t, analysistest.TestData(), typecover.Analyzer, "structcases")
 }
 
 func TestInterfaces(t *testing.T) {

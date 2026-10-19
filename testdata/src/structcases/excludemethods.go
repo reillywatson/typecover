@@ -1,4 +1,4 @@
-package structs
+package structcases
 
 // typecover:MyStruct -excludeMethods
 func testBlockWithExcludesMethodsPass() {
@@ -6,7 +6,7 @@ func testBlockWithExcludesMethodsPass() {
 	m.MyField1 = "cool"
 	m.MyField2 = "hello"
 	if true {
-		m.MyField3 = "world"
+		m.myField3 = "world"
 	}
 }
 
@@ -14,6 +14,6 @@ func testBlockWithExcludesMethodsPass() {
 func testBlockWithExcludesMethodsAndExcludePass() {
 	m := MyStruct{}
 	if true {
-		m.MyField3 = "cool"
+		m.myField3 = "cool"
 	}
 }
