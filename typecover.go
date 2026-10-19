@@ -136,7 +136,7 @@ func checkMembers(pass *analysis.Pass, n ast.Node, target types.Type, exclude []
 			switch nt := n.(type) {
 			case *ast.CompositeLit: // nt = MyType{Field: 1}
 				t := pass.TypesInfo.TypeOf(nt.Type)
-				if t == nil || strings.TrimPrefix(t.String(), "*") != target.String() {
+				if t == nil || baseTypeString(t) != target.String() {
 					return true
 				}
 
@@ -153,7 +153,7 @@ func checkMembers(pass *analysis.Pass, n ast.Node, target types.Type, exclude []
 				}
 			case *ast.SelectorExpr: // nt.Field = val
 				t := pass.TypesInfo.TypeOf(nt.X)
-				if t == nil || strings.TrimPrefix(t.String(), "*") != target.String() {
+				if t == nil || baseTypeString(t) != target.String() {
 					return true
 				}
 				if nt.Sel != nil {
@@ -186,6 +186,16 @@ func checkMembers(pass *analysis.Pass, n ast.Node, target types.Type, exclude []
 	return missing
 }
 
+// baseTypeString returns the name of t with one level of pointer and any aliases removed, so that a value whose type
+// is spelled through an alias matches the aliased type.
+func baseTypeString(t types.Type) string {
+	t = types.Unalias(t)
+	if p, ok := t.(*types.Pointer); ok {
+		t = types.Unalias(p.Elem())
+	}
+	return t.String()
+}
+
 func findType(pass *analysis.Pass, targetType string) types.Type {
 	lastDot := strings.LastIndex(targetType, ".")
 	if lastDot == -1 {
@@ -196,7 +206,7 @@ func findType(pass *analysis.Pass, targetType string) types.Type {
 	if pkgMatch(pass.Pkg.Path(), pkgName) {
 		o := pass.Pkg.Scope().Lookup(typeName)
 		if o != nil {
-			return o.Type()
+			return types.Unalias(o.Type())
 		}
 	}
 
@@ -204,7 +214,7 @@ func findType(pass *analysis.Pass, targetType string) types.Type {
 		if pkgMatch(imp.Path(), pkgName) {
 			o := imp.Scope().Lookup(typeName)
 			if o != nil {
-				return o.Type()
+				return types.Unalias(o.Type())
 			}
 		}
 	}
